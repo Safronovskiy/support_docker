@@ -1,0 +1,52 @@
+version: "3"
+
+services:
+  postgres:
+    # указываем откуда будет билдиться образ
+    build:
+      context: ./docker/postgres    # из какой директории брать
+      dockerfile: Dockerfile        # из какого файла брать
+    environment:
+      - POSTGRES_PASSWORD=db_admin_password
+    volumes:
+      # чтобы скрипт запустился записывает его
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5433"
+    command: -p 5433
+
+
+  web:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    volumes:
+      # связываем текущую диреторию(том) с директорией в контейнере т.о. все изменения на хосте подтянутся в контейнер
+      - ./:/usr/src/app
+    # не поднимать сервис web пока не подтяна база данных
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    depends_on:
+      - web
+      - postgres
+    ports:
+      - "80:80"
+    volumes:
+      - ./static/:/static
+
+
+
+
+
+
+
+
+
